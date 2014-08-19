@@ -1,0 +1,4 @@
+conics
+======
+
+Visualize conic sections
