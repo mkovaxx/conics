@@ -15,3 +15,4 @@ executable conics
     other-modules:  Conics
     build-depends:  base
                   , gloss ==1.8.*
+                  , gloss-raster ==1.8.*
