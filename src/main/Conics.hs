@@ -32,25 +32,32 @@ bezierToConic Bezier{..} =
   , conicN  = n
   , conicD  = d
   }
+  -- TODO: make it work for bezierP1 /= (0, 0)
+  -- TODO: make it work for bezierW /= 1
  where
   p0 = bezierP0 - bezierP1
   p2 = bezierP2 - bezierP1
-  dif = p0 - p2
+  (x0, y0) = p0
+  (x2, y2) = p2
+  xs = x0 + x2
+  ys = y0 + y2
+  a_d = (ys ^ 2, xs ^ 2)
+  a_s = -xs * ys
+  n = mulSV (2 * det) $ perp $ p2 - p0
+  d = det ^ 2
   det = detV p0 p2
-  a_d = undefined
-  a_s = undefined
-  -- n = mulSV (2 * det) dif
-  -- d = det ^ 2
-  n = cross $ bezierP2 - bezierP0
-  d = (-1) * dotV bezierP0 n
 
-cross :: Vector -> Vector
-cross (x, y) = (-y, x)
+perp :: Vector -> Vector
+perp (x, y) = (-y, x)
 
 evalConic :: Conic -> Vector -> Float
 evalConic Conic{..} p =
-  conicD + dotV conicN p
+  conicD + dotV conicN p + normH conicAd conicAs p
+
+-- multiply symmetric 2x2-matrix by 2-vector
+mulHV :: Vector -> Float -> Vector -> Vector
+mulHV (a, c) b (x, y) =
+  (a * x + b * y, b * x + c * y)
 
 normH :: Vector -> Float -> Vector -> Float
-normH (a, c) b (x, y) =
-  (a * x ^ 2) + (2 * b * x * y) + (c * y ^ 2)
+normH a_d a_s v = dotV v (mulHV a_d a_s v)

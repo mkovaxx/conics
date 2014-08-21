@@ -64,7 +64,7 @@ draw State{..} =
     }
   conic = bezierToConic bezier
   plot = makePicture (fst size) (snd size) 1 1
-    ( (\v -> if v < 0 then white else violet)
+    ( (\v -> if v > 0 then white else violet)
     . evalConic conic
     . (\(x, y) -> (0.5 * fromIntegral (fst size) * x, 0.5 * fromIntegral (snd size) * y))
     )
