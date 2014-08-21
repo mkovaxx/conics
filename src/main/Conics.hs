@@ -29,23 +29,23 @@ bezierToConic Bezier{..} =
   Conic
   { conicAd = a_d
   , conicAs = a_s
-  , conicN  = n
-  , conicD  = d
+  , conicN  = n - mulSV 2 (mulHV a_d a_s p1)
+  , conicD  = d - dotV n p1 + normH a_d a_s p1
   }
-  -- TODO: make it work for bezierP1 /= (0, 0)
   -- TODO: make it work for bezierW /= 1
  where
   p0 = bezierP0 - bezierP1
   p2 = bezierP2 - bezierP1
+  p1 = bezierP1
   (x0, y0) = p0
   (x2, y2) = p2
+  det = detV p0 p2
   xs = x0 + x2
   ys = y0 + y2
   a_d = (ys ^ 2, xs ^ 2)
   a_s = -xs * ys
   n = mulSV (2 * det) $ perp $ p2 - p0
   d = det ^ 2
-  det = detV p0 p2
 
 perp :: Vector -> Vector
 perp (x, y) = (-y, x)
