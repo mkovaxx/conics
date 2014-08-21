@@ -15,7 +15,7 @@ main = do
   let
     position = (10, 10)
   play
-    (InWindow "Conics" (size initialize) position)
+    (InWindow "Conic Sections and Quadratic Rational Bezier Curves" (size initialize) position)
     white
     0
     initialize

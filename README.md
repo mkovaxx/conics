@@ -1,4 +1,4 @@
 conics
 ======
 
-Visualize conic sections
+A study of conic sections and quadratic rational Bézier curves
