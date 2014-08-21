@@ -5,7 +5,9 @@ import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Raster.Field
 
 import Conics
+import Util
 
+knobRadius :: Float
 knobRadius = 6
 
 main :: IO ()
@@ -77,7 +79,8 @@ input event state@State{..} = case event of
     (if magV (pos - point0) < knobRadius then state{ selection = Just 0 }
     else if magV (pos - point2) < knobRadius then state{ selection = Just 2 }
     else if magV (pos - point1) < knobRadius then state{ selection = Just 1 }
-    else state){ cursor = pos }
+    else state{ selection = Just 3 }
+    ){ cursor = pos }
   EventKey (MouseButton LeftButton) Up _ pos ->
     state{ selection = Nothing, cursor = pos }
   EventMotion pos ->
@@ -86,6 +89,7 @@ input event state@State{..} = case event of
       Just 0  -> state{ point0 = point0 + pos - cursor }
       Just 1  -> state{ point1 = point1 + pos - cursor }
       Just 2  -> state{ point2 = point2 + pos - cursor }
+      Just 3  -> state{ weight = weight - 0.001 * dotV (pos - cursor) (normaliseV $ rotV $ point2 - point0) }
       ){cursor = pos}
   _ -> state
 

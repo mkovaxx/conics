@@ -8,6 +8,8 @@ module Conics
 
 import Graphics.Gloss.Data.Vector
 
+import Util
+
 data Bezier =
   Bezier
   { bezierP0 :: Vector
@@ -30,34 +32,24 @@ bezierToConic Bezier{..} =
   { conicAd = a_d
   , conicAs = a_s
   , conicN  = n - mulSV 2 (mulHV a_d a_s p1)
-  , conicD  = d - dotV n p1 + normH a_d a_s p1
+  , conicD  = d - dotV n p1 + normHV a_d a_s p1
   }
-  -- TODO: make it work for bezierW /= 1
  where
   p0 = bezierP0 - bezierP1
   p2 = bezierP2 - bezierP1
   p1 = bezierP1
+  ws = bezierW ^ 2
   (x0, y0) = p0
   (x2, y2) = p2
+  pd = p2 - p0
+  (xd, yd) = pd
   det = detV p0 p2
-  xs = x0 + x2
-  ys = y0 + y2
-  a_d = (ys ^ 2, xs ^ 2)
-  a_s = -xs * ys
-  n = mulSV (2 * det) $ perp $ p2 - p0
+  a_d = (yd ^ 2 + 4.0 * ws * y0 * y2,
+         xd ^ 2 + 4.0 * ws * x0 * x2)
+  a_s = -(xd * yd + 2.0 * ws * (x0 * y2 + x2 * y0))
+  n = mulSV (2.0 * det) $ rotV pd
   d = det ^ 2
-
-perp :: Vector -> Vector
-perp (x, y) = (-y, x)
 
 evalConic :: Conic -> Vector -> Float
 evalConic Conic{..} p =
-  conicD + dotV conicN p + normH conicAd conicAs p
-
--- multiply symmetric 2x2-matrix by 2-vector
-mulHV :: Vector -> Float -> Vector -> Vector
-mulHV (a, c) b (x, y) =
-  (a * x + b * y, b * x + c * y)
-
-normH :: Vector -> Float -> Vector -> Float
-normH a_d a_s v = dotV v (mulHV a_d a_s v)
+  conicD + dotV conicN p + normHV conicAd conicAs p
