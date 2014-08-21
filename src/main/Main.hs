@@ -4,7 +4,7 @@ import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Interface.Pure.Game
 import Graphics.Gloss.Raster.Field
 
-import Conics
+import Conic
 import Util
 
 knobRadius :: Float

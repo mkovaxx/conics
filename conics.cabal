@@ -12,7 +12,7 @@ executable conics
     ghc-options:    -Wall
     hs-source-dirs: src/main
     main-is:        Main.hs
-    other-modules:  Conics, Util
+    other-modules:  Conic, Util
     build-depends:  base
                   , gloss ==1.8.*
                   , gloss-raster ==1.8.*

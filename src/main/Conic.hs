@@ -1,5 +1,5 @@
 {-# LANGUAGE RecordWildCards #-}
-module Conics
+module Conic
   ( Bezier(..)
   , Conic(..)
   , bezierToConic
