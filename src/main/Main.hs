@@ -46,15 +46,15 @@ initialize =
 
 draw :: State -> Picture
 draw State{..} =
-  Color black $ Pictures
+  Pictures [plot, hud]
+ where
+  hud = Color black $ Pictures
     [ Line [point0, point1]
     , Line [point1, point2]
     , uncurry Translate point0 $ Circle knobRadius
     , uncurry Translate point1 $ Circle knobRadius
     , uncurry Translate point2 $ Circle knobRadius
-    , plot
     ]
- where
   bezier =
     Bezier
     { bezierP0 = point0
@@ -63,7 +63,11 @@ draw State{..} =
     , bezierW  = weight
     }
   conic = bezierToConic bezier
-  plot = makePicture (fst size) (snd size) 1 1 ((\v -> if v < 0 then white else purple) . evalConic conic)
+  plot = makePicture (fst size) (snd size) 1 1
+    ( (\v -> if v < 0 then white else violet)
+    . evalConic conic
+    . (\(x, y) -> (0.5 * fromIntegral (fst size) * x, 0.5 * fromIntegral (snd size) * y))
+    )
 
 input :: Event -> State -> State
 input event state@State{..} = case event of
