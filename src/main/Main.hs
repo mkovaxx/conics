@@ -8,9 +8,6 @@ import Graphics.Gloss.Raster.Field
 import Conic
 import Util
 
-knobRadius :: Float
-knobRadius = 11
-
 main :: IO ()
 main = do
   let
@@ -28,6 +25,7 @@ data State =
   State
   { size :: (Int, Int)
   , selection :: Maybe Int
+  , knobRadius :: Int
   , cursor :: Point
   , point0 :: Point
   , point1 :: Point
@@ -42,6 +40,7 @@ initialize =
   State
   { size = (800, 600)
   , selection = Nothing
+  , knobRadius = 31
   , cursor = (0, 0)
   , point0 = (40, 250)
   , point1 = (0, 0)
@@ -58,11 +57,11 @@ draw State{..} =
   hud = Color black $ Pictures
     [ Line [point0, point1]
     , Line [point1, point2]
-    , uncurry Translate point0 $ Circle knobRadius
-    , uncurry Translate point1 $ Circle knobRadius
-    , uncurry Translate point2 $ Circle knobRadius
-    , uncurry Translate raySrc $ Circle knobRadius
-    , uncurry Translate rayDst $ Circle knobRadius
+    , uncurry Translate point0 $ Circle $ fromIntegral knobRadius
+    , uncurry Translate point1 $ Circle $ fromIntegral knobRadius
+    , uncurry Translate point2 $ Circle $ fromIntegral knobRadius
+    , uncurry Translate raySrc $ Circle $ fromIntegral knobRadius
+    , uncurry Translate rayDst $ Circle $ fromIntegral knobRadius
     ]
   bezier =
     Bezier
@@ -80,12 +79,16 @@ input :: Event -> State -> State
 input event state@State{..} = case event of
   EventResize newSize ->
     state{ size = newSize }
+  EventKey (MouseButton WheelUp) Down _ pos ->
+    state{ knobRadius = knobRadius + 1, cursor = pos }
+  EventKey (MouseButton WheelDown) Down _ pos ->
+    state{ knobRadius = knobRadius - 1, cursor = pos }
   EventKey (MouseButton LeftButton) Down _ pos ->
-    (if magV (pos - point0) < knobRadius then state{ selection = Just 0 }
-    else if magV (pos - point2) < knobRadius then state{ selection = Just 2 }
-    else if magV (pos - point1) < knobRadius then state{ selection = Just 1 }
-    else if magV (pos - raySrc) < knobRadius then state{ selection = Just 3 }
-    else if magV (pos - rayDst) < knobRadius then state{ selection = Just 4 }
+    (if magV (pos - point0) < fromIntegral knobRadius then state{ selection = Just 0 }
+    else if magV (pos - point2) < fromIntegral knobRadius then state{ selection = Just 2 }
+    else if magV (pos - point1) < fromIntegral knobRadius then state{ selection = Just 1 }
+    else if magV (pos - raySrc) < fromIntegral knobRadius then state{ selection = Just 3 }
+    else if magV (pos - rayDst) < fromIntegral knobRadius then state{ selection = Just 4 }
     else state{ selection = Just (-1) }
     ){ cursor = pos }
   EventKey (MouseButton LeftButton) Up _ pos ->
