@@ -57,14 +57,15 @@ draw State{..} =
   hud = Color black $ Pictures
     [ Line [point0, point1]
     , Line [point1, point2]
-    , Line [point1, median]
-    , Line [mulSV (1 / (1 + weight)) (point0 + point1), mulSV (1 / (1 + weight)) (point2 + point1)]
+    , Line [ mulSV (1 / (1 + absW)) (mulSV absW point1 + point0)
+           , mulSV (1 / (1 + absW)) (mulSV absW point1 + point2)]
     , uncurry Translate point0 $ Circle $ fromIntegral knobRadius
     , uncurry Translate point1 $ Circle $ fromIntegral knobRadius
     , uncurry Translate point2 $ Circle $ fromIntegral knobRadius
     , uncurry Translate raySrc $ Circle $ fromIntegral knobRadius
     , uncurry Translate rayDst $ Circle $ fromIntegral knobRadius
     ]
+  absW = abs weight
   bezier =
     Bezier
     { bezierP0 = point0
@@ -72,7 +73,6 @@ draw State{..} =
     , bezierP2 = point2
     , bezierW  = weight
     }
-  median = mulSV 0.5 (point0 + point2)
   rayDir = rayDst - raySrc
   conic = bezierToConic bezier
   plot = plotConicSlice size white violet conic
@@ -109,7 +109,7 @@ input event state@State{..} = case event of
                                      median = mulSV 0.5 (point0 + point2) - point1
                                      p = pos - point1
                                      cosa = dotV p median / dotV median median
-                                   in cosa
+                                   in 1.0 / cosa - 1.0
                         }
       ){cursor = pos}
 
