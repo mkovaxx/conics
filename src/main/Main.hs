@@ -9,7 +9,7 @@ import Conic
 import Util
 
 knobRadius :: Float
-knobRadius = 6
+knobRadius = 11
 
 main :: IO ()
 main = do
