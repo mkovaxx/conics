@@ -57,6 +57,8 @@ draw State{..} =
   hud = Color black $ Pictures
     [ Line [point0, point1]
     , Line [point1, point2]
+    , Line [point1, median]
+    , Line [mulSV (1 / (1 + weight)) (point0 + point1), mulSV (1 / (1 + weight)) (point2 + point1)]
     , uncurry Translate point0 $ Circle $ fromIntegral knobRadius
     , uncurry Translate point1 $ Circle $ fromIntegral knobRadius
     , uncurry Translate point2 $ Circle $ fromIntegral knobRadius
@@ -70,6 +72,7 @@ draw State{..} =
     , bezierP2 = point2
     , bezierW  = weight
     }
+  median = mulSV 0.5 (point0 + point2)
   rayDir = rayDst - raySrc
   conic = bezierToConic bezier
   plot = plotConicSlice size white violet conic
@@ -87,22 +90,29 @@ input event state@State{..} = case event of
     (if magV (pos - point0) < fromIntegral knobRadius then state{ selection = Just 0 }
     else if magV (pos - point2) < fromIntegral knobRadius then state{ selection = Just 2 }
     else if magV (pos - point1) < fromIntegral knobRadius then state{ selection = Just 1 }
-    else if magV (pos - raySrc) < fromIntegral knobRadius then state{ selection = Just 3 }
-    else if magV (pos - rayDst) < fromIntegral knobRadius then state{ selection = Just 4 }
+    else if magV (pos - raySrc) < fromIntegral knobRadius then state{ selection = Just 4 }
+    else if magV (pos - rayDst) < fromIntegral knobRadius then state{ selection = Just 5 }
     else state{ selection = Just (-1) }
     ){ cursor = pos }
   EventKey (MouseButton LeftButton) Up _ pos ->
     state{ selection = Nothing, cursor = pos }
   EventMotion pos ->
     (case selection of
-      Nothing -> state
-      Just 0  -> state{ point0 = point0 + pos - cursor }
-      Just 1  -> state{ point1 = point1 + pos - cursor }
-      Just 2  -> state{ point2 = point2 + pos - cursor }
-      Just 3  -> state{ raySrc = raySrc + pos - cursor }
-      Just 4  -> state{ rayDst = rayDst + pos - cursor }
-      Just (-1)  -> state{ weight = weight - 0.001 * dotV (pos - cursor) (normaliseV $ rotV $ point2 - point0) }
+      Nothing   -> state
+      Just 0    -> state{ point0 = point0 + pos - cursor }
+      Just 1    -> state{ point1 = point1 + pos - cursor }
+      Just 2    -> state{ point2 = point2 + pos - cursor }
+      Just 3    -> state
+      Just 4    -> state{ raySrc = raySrc + pos - cursor }
+      Just 5    -> state{ rayDst = rayDst + pos - cursor }
+      Just (-1) -> state{ weight = let
+                                     median = mulSV 0.5 (point0 + point2) - point1
+                                     p = pos - point1
+                                     cosa = dotV p median / dotV median median
+                                   in cosa
+                        }
       ){cursor = pos}
+
   _ -> state
 
 step :: Float -> State -> State
