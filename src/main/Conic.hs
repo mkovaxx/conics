@@ -4,6 +4,7 @@ module Conic
   , Conic(..)
   , bezierToConic
   , evalConic
+  , pierceConic
   ) where
 
 import Graphics.Gloss.Data.Vector
@@ -53,3 +54,14 @@ bezierToConic Bezier{..} =
 evalConic :: Conic -> Vector -> Float
 evalConic Conic{..} p =
   conicD + dotV conicN p + normHV conicAd conicAs p
+
+pierceConic :: Conic -> Vector -> Vector -> [Float]
+pierceConic Conic{..} raySrc rayDir =
+  if dis < 0.0 then []
+  else [(-b + s) / (2.0 * a) | s <- [-sq, sq]]
+ where
+  dis = b ^ 2 - 4.0 * a * c
+  sq = sqrt dis
+  a = normHV conicAd conicAs rayDir
+  b = 2.0 * dotV raySrc (mulHV conicAd conicAs rayDir) + dotV conicN rayDir
+  c = normHV conicAd conicAs raySrc + dotV conicN raySrc + conicD
