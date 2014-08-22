@@ -53,7 +53,7 @@ initialize =
 
 draw :: State -> Picture
 draw State{..} =
-  Pictures [plot, secantLine, hud]
+  Pictures [plot, secant, hud]
  where
   hud = Color black $ Pictures
     [ Line [point0, point1]
@@ -73,40 +73,8 @@ draw State{..} =
     }
   rayDir = rayDst - raySrc
   conic = bezierToConic bezier
-  plot = plotConic size white violet conic
-  secantLine = Pictures $ segments
-  segments = zipWith (colorSegment conic red green) points (tail points)
-  points = map toPoint $ sort $ plotBounds ++ map clamp shapeBounds
-  toPoint = \t -> raySrc + mulSV t rayDir
-  clamp = max plotMin . min plotMax
-  shapeBounds = pierceConic conic raySrc rayDir
-  plotBounds = pierceBox viewBox raySrc rayDir
-  [plotMin, plotMax] = plotBounds
-  viewBox = mulSV 0.51 (fromIntegral $ fst size, fromIntegral $ snd size)
-
-pierceBox :: (Float, Float) -> Vector -> Vector -> [Float]
-pierceBox (width, height) (xs, ys) (xd, yd) =
-  if minT < maxT then [minT, maxT] else []
- where
-  minT = max xt0 yt0
-  maxT = min xt1 yt1
-  [xt0, xt1] = sort $ [(c - xs) / xd | c <- [-width , width ]]
-  [yt0, yt1] = sort $ [(c - ys) / yd | c <- [-height, height]]
-
-colorSegment :: Conic -> Color -> Color -> Point -> Point -> Picture
-colorSegment conic positive negative a b =
-  Color color $ Line [a, b]
- where
-  color = if evalConic conic midPoint > 0 then positive else negative
-  midPoint = mulSV 0.5 $ a + b
-
-plotConic :: (Int, Int) -> Color -> Color -> Conic -> Picture
-plotConic size positive negative conic =
-  makePicture (fst size) (snd size) 1 1
-    ( (\v -> if v > 0 then positive else negative)
-    . evalConic conic
-    . (\(x, y) -> (0.5 * fromIntegral (fst size) * x, 0.5 * fromIntegral (snd size) * y))
-    )
+  plot = plotConicSlice size white violet conic
+  secant = plotSecant size red green conic raySrc rayDir
 
 input :: Event -> State -> State
 input event state@State{..} = case event of
@@ -136,3 +104,43 @@ input event state@State{..} = case event of
 
 step :: Float -> State -> State
 step _ = id
+
+plotConicSlice :: (Int, Int) -> Color -> Color -> Conic -> Picture
+plotConicSlice size positive negative conic =
+  Pictures [plotSecant size positive negative conic (0.0, fromIntegral y) (1.0, 0.0) | y <- [-snd size .. snd size]]
+
+plotConic :: (Int, Int) -> Color -> Color -> Conic -> Picture
+plotConic size positive negative conic =
+  makePicture (fst size) (snd size) 1 1
+    ( (\v -> if v > 0 then positive else negative)
+    . evalConic conic
+    . (\(x, y) -> (0.5 * fromIntegral (fst size) * x, 0.5 * fromIntegral (snd size) * y))
+    )
+
+plotSecant :: (Int, Int) -> Color -> Color -> Conic -> Vector -> Vector -> Picture
+plotSecant size positive negative conic raySrc rayDir =
+  Pictures $ zipWith (colorSegment conic positive negative) points (tail points)
+ where
+  points = [raySrc + mulSV t rayDir | t <- params]
+  params = sort $ plotBounds ++ map clamp shapeBounds
+  clamp = max plotMin . min plotMax
+  shapeBounds = pierceConic conic raySrc rayDir
+  plotBounds = pierceBox viewBox raySrc rayDir
+  [plotMin, plotMax] = plotBounds
+  viewBox = mulSV 0.5 (fromIntegral $ fst size, fromIntegral $ snd size)
+
+colorSegment :: Conic -> Color -> Color -> Point -> Point -> Picture
+colorSegment conic positive negative a b =
+  Color color $ Line [a, b]
+ where
+  color = if evalConic conic midPoint > 0 then positive else negative
+  midPoint = mulSV 0.5 $ a + b
+
+pierceBox :: (Float, Float) -> Vector -> Vector -> [Float]
+pierceBox (width, height) (xs, ys) (xd, yd) =
+  if minT < maxT then [minT, maxT] else [0, 0]
+ where
+  minT = max xt0 yt0
+  maxT = min xt1 yt1
+  [xt0, xt1] = sort $ [(c - xs) / xd | c <- [-width , width ]]
+  [yt0, yt1] = sort $ [(c - ys) / yd | c <- [-height, height]]
