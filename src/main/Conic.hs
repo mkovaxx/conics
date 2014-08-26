@@ -39,17 +39,17 @@ bezierToConic Bezier{..} =
   p0 = bezierP0 - bezierP1
   p2 = bezierP2 - bezierP1
   p1 = bezierP1
-  ws = bezierW ^ 2
+  ws = bezierW ^ (2 :: Int)
   (x0, y0) = p0
   (x2, y2) = p2
   pd = p2 - p0
   (xd, yd) = pd
   det = detV p0 p2
-  a_d = (yd ^ 2 + 4.0 * ws * y0 * y2,
-         xd ^ 2 + 4.0 * ws * x0 * x2)
-  a_s = -(xd * yd + 2.0 * ws * (x0 * y2 + x2 * y0))
-  n = mulSV (2.0 * det) $ rotV pd
-  d = det ^ 2
+  a_d = (yd ^ (2 :: Int) + 4 * ws * y0 * y2,
+         xd ^ (2 :: Int) + 4 * ws * x0 * x2)
+  a_s = -(xd * yd + 2 * ws * (x0 * y2 + x2 * y0))
+  n = mulSV (2 * det) $ rotV pd
+  d = det ^ (2 :: Int)
 
 evalConic :: Conic -> Vector -> Float
 evalConic Conic{..} p =
@@ -57,11 +57,11 @@ evalConic Conic{..} p =
 
 pierceConic :: Conic -> Vector -> Vector -> [Float]
 pierceConic Conic{..} raySrc rayDir =
-  if dis < 0.0 then []
-  else [(-b + s) / (2.0 * a) | s <- [-sq, sq]]
+  if dis < 0 then []
+  else [(-b + s) / (2 * a) | s <- [-sq, sq]]
  where
-  dis = b ^ 2 - 4.0 * a * c
+  dis = b ^ (2 :: Int) - 4 * a * c
   sq = sqrt dis
   a = normHV conicAd conicAs rayDir
-  b = 2.0 * dotV raySrc (mulHV conicAd conicAs rayDir) + dotV conicN rayDir
+  b = 2 * dotV raySrc (mulHV conicAd conicAs rayDir) + dotV conicN rayDir
   c = normHV conicAd conicAs raySrc + dotV conicN raySrc + conicD

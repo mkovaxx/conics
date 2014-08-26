@@ -3,10 +3,8 @@ import Data.List (sort)
 import Graphics.Gloss
 import Graphics.Gloss.Data.Vector
 import Graphics.Gloss.Interface.Pure.Game
-import Graphics.Gloss.Raster.Field
 
 import Conic
-import Util
 
 main :: IO ()
 main = do
@@ -24,7 +22,7 @@ main = do
 data State =
   State
   { size :: (Int, Int)
-  , selection :: Maybe Int
+  , selection :: Selection
   , knobRadius :: Int
   , cursor :: Point
   , point0 :: Point
@@ -35,11 +33,20 @@ data State =
   , rayDst :: Point
   }
 
+data Selection
+  = SelNothing
+  | SelBezierP0
+  | SelBezierP1
+  | SelBezierP2
+  | SelBezierW
+  | SelLineP0
+  | SelLineP1
+
 initialize :: State
 initialize =
   State
   { size = (800, 600)
-  , selection = Nothing
+  , selection = SelNothing
   , knobRadius = 31
   , cursor = (0, 0)
   , point0 = (40, 250)
@@ -87,31 +94,30 @@ input event state@State{..} = case event of
   EventKey (MouseButton WheelDown) Down _ pos ->
     state{ knobRadius = knobRadius - 1, cursor = pos }
   EventKey (MouseButton LeftButton) Down _ pos ->
-    (if magV (pos - point0) < fromIntegral knobRadius then state{ selection = Just 0 }
-    else if magV (pos - point2) < fromIntegral knobRadius then state{ selection = Just 2 }
-    else if magV (pos - point1) < fromIntegral knobRadius then state{ selection = Just 1 }
-    else if magV (pos - raySrc) < fromIntegral knobRadius then state{ selection = Just 4 }
-    else if magV (pos - rayDst) < fromIntegral knobRadius then state{ selection = Just 5 }
-    else state{ selection = Just (-1) }
+    (if magV (pos - point0) < fromIntegral knobRadius then state{ selection = SelBezierP0 }
+    else if magV (pos - point2) < fromIntegral knobRadius then state{ selection = SelBezierP2 }
+    else if magV (pos - point1) < fromIntegral knobRadius then state{ selection = SelBezierP1 }
+    else if magV (pos - raySrc) < fromIntegral knobRadius then state{ selection = SelLineP0 }
+    else if magV (pos - rayDst) < fromIntegral knobRadius then state{ selection = SelLineP1 }
+    else state{ selection = SelBezierW }
     ){ cursor = pos }
   EventKey (MouseButton LeftButton) Up _ pos ->
-    state{ selection = Nothing, cursor = pos }
+    state{ selection = SelNothing, cursor = pos }
   EventMotion pos ->
     (case selection of
-      Nothing   -> state
-      Just 0    -> state{ point0 = point0 + pos - cursor }
-      Just 1    -> state{ point1 = point1 + pos - cursor }
-      Just 2    -> state{ point2 = point2 + pos - cursor }
-      Just 3    -> state
-      Just 4    -> state{ raySrc = raySrc + pos - cursor }
-      Just 5    -> state{ rayDst = rayDst + pos - cursor }
-      Just (-1) -> state{ weight = let
+      SelNothing  -> state
+      SelBezierP0 -> state{ point0 = point0 + pos - cursor }
+      SelBezierP1 -> state{ point1 = point1 + pos - cursor }
+      SelBezierP2 -> state{ point2 = point2 + pos - cursor }
+      SelBezierW  -> state{ weight = let
                                      median = mulSV 0.5 (point0 + point2) - point1
                                      p = pos - point1
                                      cosa = dotV p median / dotV median median
                                    in 1.0 / cosa - 1.0
                         }
-      ){cursor = pos}
+      SelLineP0   -> state{ raySrc = raySrc + pos - cursor }
+      SelLineP1   -> state{ rayDst = rayDst + pos - cursor }
+    ){cursor = pos}
 
   _ -> state
 
@@ -121,14 +127,6 @@ step _ = id
 plotConicSlice :: (Int, Int) -> Color -> Color -> Conic -> Picture
 plotConicSlice size positive negative conic =
   Pictures [plotSecant size positive negative conic (0.0, fromIntegral y) (1.0, 0.0) | y <- [-snd size .. snd size]]
-
-plotConic :: (Int, Int) -> Color -> Color -> Conic -> Picture
-plotConic size positive negative conic =
-  makePicture (fst size) (snd size) 1 1
-    ( (\v -> if v > 0 then positive else negative)
-    . evalConic conic
-    . (\(x, y) -> (0.5 * fromIntegral (fst size) * x, 0.5 * fromIntegral (snd size) * y))
-    )
 
 plotSecant :: (Int, Int) -> Color -> Color -> Conic -> Vector -> Vector -> Picture
 plotSecant size positive negative conic raySrc rayDir =
@@ -144,9 +142,9 @@ plotSecant size positive negative conic raySrc rayDir =
 
 colorSegment :: Conic -> Color -> Color -> Point -> Point -> Picture
 colorSegment conic positive negative a b =
-  Color color $ Line [a, b]
+  Color col $ Line [a, b]
  where
-  color = if evalConic conic midPoint > 0 then positive else negative
+  col = if evalConic conic midPoint > 0 then positive else negative
   midPoint = mulSV 0.5 $ a + b
 
 pierceBox :: (Float, Float) -> Vector -> Vector -> [Float]
