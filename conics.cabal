@@ -1,7 +1,7 @@
 name:           conics
 version:        0.0.1
 synopsis:       A study of conic sections and quadratic rational Bézier curves
-category:       Game
+category:       Demo
 copyright:      Máté J Kovács, 2014
 stability:      alpha
 tested-with:    GHC == 7.8.2
