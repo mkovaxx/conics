@@ -59,7 +59,7 @@ initialize =
 
 draw :: State -> Picture
 draw State{..} =
-  Pictures [plot, secant, hud]
+  Pictures [plot, secant, hud, surface]
  where
   hud = Color black $ Pictures
     [ Line [point0, point1]
@@ -84,6 +84,11 @@ draw State{..} =
   conic = bezierToConic bezier
   plot = plotConicSlice size white violet conic
   secant = plotSecant size red green conic raySrc rayDir
+  surface = Pictures
+    [ Color color $ uncurry Translate (evalBezier bezier t) $ Circle 4.0
+    | t <- pierceBezier bezier raySrc rayDir
+    , let color = if 0 < t && t < 1 then blue else red
+    ]
 
 input :: Event -> State -> State
 input event state@State{..} = case event of

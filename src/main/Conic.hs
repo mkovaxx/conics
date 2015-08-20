@@ -2,6 +2,8 @@
 module Conic
   ( Bezier(..)
   , Conic(..)
+  , evalBezier
+  , pierceBezier
   , bezierToConic
   , evalConic
   , pierceConic
@@ -26,6 +28,34 @@ data Conic =
   , conicN  :: Vector
   , conicD  :: Float
   }
+
+evalBezier :: Bezier -> Float -> Vector
+evalBezier Bezier{..} t =
+  mulSV (1.0 / (t0 + t1 + t2))
+    ( mulSV t0 bezierP0
+    + mulSV t1 bezierP1
+    + mulSV t2 bezierP2
+    )
+ where
+  t0 = (1 - t)^2
+  t1 = bezierW * 2*t * (1 - t)
+  t2 = t^2
+
+pierceBezier :: Bezier -> Vector -> Vector -> [Float]
+pierceBezier Bezier{..} raySrc rayDir =
+  if dis < 0 then []
+  else [(-b + s) / (2 * a) | s <- [-sq, sq]]
+ where
+  dis = b ^ (2 :: Int) - 4 * a * c
+  sq = sqrt dis
+  a = p0 - 2*p1 + p2
+  b = 2 * (p1 - p0)
+  c = p0
+  n = rotV rayDir
+  pn = dotV raySrc n
+  p0 = dotV bezierP0 n - pn
+  p1 = bezierW * (dotV bezierP1 n - pn)
+  p2 = dotV bezierP2 n - pn
 
 bezierToConic :: Bezier -> Conic
 bezierToConic Bezier{..} =
