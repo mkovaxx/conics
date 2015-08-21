@@ -43,11 +43,8 @@ evalBezier Bezier{..} t =
 
 pierceBezier :: Bezier -> Vector -> Vector -> [Float]
 pierceBezier Bezier{..} raySrc rayDir =
-  if dis < 0 then []
-  else [(-b + s) / (2 * a) | s <- [-sq, sq]]
+  solveQuadratic a b c
  where
-  dis = b ^ (2 :: Int) - 4 * a * c
-  sq = sqrt dis
   a = p0 - 2*p1 + p2
   b = 2 * (p1 - p0)
   c = p0
@@ -87,11 +84,16 @@ evalConic Conic{..} p =
 
 pierceConic :: Conic -> Vector -> Vector -> [Float]
 pierceConic Conic{..} raySrc rayDir =
+  solveQuadratic a b c
+ where
+  a = normHV conicAd conicAs rayDir
+  b = 2 * dotV raySrc (mulHV conicAd conicAs rayDir) + dotV conicN rayDir
+  c = normHV conicAd conicAs raySrc + dotV conicN raySrc + conicD
+
+solveQuadratic :: Float -> Float -> Float -> [Float]
+solveQuadratic a b c =
   if dis < 0 then []
   else [(-b + s) / (2 * a) | s <- [-sq, sq]]
  where
   dis = b ^ (2 :: Int) - 4 * a * c
   sq = sqrt dis
-  a = normHV conicAd conicAs rayDir
-  b = 2 * dotV raySrc (mulHV conicAd conicAs rayDir) + dotV conicN rayDir
-  c = normHV conicAd conicAs raySrc + dotV conicN raySrc + conicD
